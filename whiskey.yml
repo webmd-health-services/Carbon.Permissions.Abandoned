@@ -1,0 +1,83 @@
+
+PublishOn:
+- main
+- prerelease
+
+Build:
+- Version:
+    Path: Carbon.Permissions\Carbon.Permissions.psd1
+
+# Dot-sourcing files is expensive. Move all functions into .psm1 file to improve import speed. Do this before testing
+# to ensure the module still works.
+- MergeFile:
+    OnlyBy: BuildServer
+    # Builds run twice on some serves. Only run this step if the module hasn't been merged yet.
+    IfExists: Carbon.Permissions\Functions\*.ps1
+    Path:
+    - Carbon.Permissions\Functions\*.ps1
+    DestinationPath: Carbon.Permissions\Carbon.Permissions.psm1
+    DeleteSourceFiles: true
+    TextSeparator: "$(NewLine)$(NewLine)"
+
+- CopyFile:
+    IfExists: env:WHS_CI
+    Path:
+    - LICENSE
+    - NOTICE
+    DestinationDirectory: Carbon.Permissions
+
+- PowerShell:
+    ExceptDuring: Clean
+    Path: init.ps1
+
+- PowerShell:
+    OnlyDuring: Clean
+    Path: reset.ps1
+
+- Pester4:
+    Script: Tests\*.Tests.ps1
+
+# Build runs twice on some servers, so delete any ZIP file created by another build.
+- Delete:
+    Path: .output\*.zip
+
+- Zip:
+    ArchivePath: .output\Carbon.Permissions.zip
+    Path: 
+    - Carbon.Permissions
+
+Publish:
+
+- AppVeyorWaitForBuildJobs:
+    IfExists: env:PUBLISH
+    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
+    ApiKeyID: AppVeyorBearerToken
+
+- PublishPowerShellModule:
+    IfExists: env:PUBLISH
+    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
+    RepositoryName: PSGallery
+    RepositoryUri: https://powershellgallery.com/api/v2/
+    Path: Carbon.Permissions
+    ApiKeyID: PowerShellGalleryApiKey
+
+- SetVariableFromPowerShellDataFile:
+    Path: Carbon.Permissions\Carbon.Permissions.psd1
+    Variables:
+        PrivateData:
+            PSData:
+                ReleaseNotes: RELEASE_NOTES
+
+- GitHubRelease:
+    IfExists: env:PUBLISH
+    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
+    RepositoryName: webmd-health-services/Carbon.Permissions
+    ApiKeyID: GitHubAccessToken
+    Tag: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)
+    Commitish: $(WHISKEY_SCM_COMMIT_ID)
+    Name: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)
+    Description: $(RELEASE_NOTES)
+    Assets:
+    - Path: .output\Carbon.Permissions.zip
+      ContentType: application/zip
+      Name: Carbon.Permissions-$(WHISKEY_SEMVER2_NO_BUILD_METADATA).zip
