@@ -18,7 +18,7 @@
     RootModule = 'Carbon.Permissions.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.0.0'
+    ModuleVersion = '1.0.0'
 
     # ID used to uniquely identify this module
     GUID = ''
@@ -76,6 +76,14 @@
 
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
+        'ConvertTo-InheritanceFlag',
+        'ConvertTo-PropagationFlag',
+        'ConvertTo-ProviderAccessControlRights',
+        'Get-Permission',
+        'Grant-Permission',
+        'Grant-Privilege',
+        'Set-CryptoKeySecurity',
+        'Test-Permission'
     )
 
     # Cmdlets to export from this module. By default, you get a script module, so there are no cmdlets.
