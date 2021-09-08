@@ -3,19 +3,19 @@
 Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
-$userName = "CarbonGrantPrivilege"
-$password = "a1b2c3d4#"
+
+$testCredentials = New-Credential -Username "CarbonGrantPrivilege" -Password "a1b2c3d4e5#!"
 $serviceName = 'CarbonGrantPrivilegeTest'
 $servicePath = Join-Path -Path $PSScriptRoot -ChildPath 'Service\NoOpService.exe' -Resolve
 
 function InstallUser
 {
-    Install-User -Credential (New-Credential -Username $userName -Password $password) -Description 'Account for testing Carbon Grant-Privileges functions.'
+    Install-User -Credential $testCredentials 
+                 -Description 'Account for testing Carbon Grant-Privileges functions.'
 }
 function UninstallUser
 {
     Uninstall-User -Credential $testCredentials
-    #Uninstall-User -Username $username
 }
 
 function InstallService
@@ -23,9 +23,7 @@ function InstallService
     Install-Service  -Name $serviceName 
                      -Path $servicePath
                      -StartupType Manual 
-                     #-Credential $testCredentials
-                     -userName $username
-                     -password $password
+                     -Credential $testCredentials
 }
 
 function StartService
@@ -40,12 +38,12 @@ function StopService
 
 function GrantPrivilege
 {
-    Grant-Privilege -Identity $username -Privilege SeServiceLogonRight
+    Grant-Privilege -Identity $testCredentials.UserName -Privilege SeServiceLogonRight
 }
 
 function RevokePrivilege
 {
-    Revoke-Privilege -Identity $username -Privilege SeServiceLogonRight
+    Revoke-Privilege -Identity $testCredentials.UserName -Privilege SeServiceLogonRight
 }
 
 function ThenPermissionGranted
