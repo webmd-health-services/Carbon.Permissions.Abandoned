@@ -26,6 +26,8 @@ $originalWhatIfPref = $Global:WhatIfPreference
 $Global:VerbosePreference = $VerbosePreference = 'SilentlyContinue'
 $Global:WhatIfPreference = $WhatIfPreference = $false
 
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon.Core' -Resolve)
+
 try
 {
     $modules = [ordered]@{
