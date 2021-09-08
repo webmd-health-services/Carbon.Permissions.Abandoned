@@ -3,29 +3,29 @@
 Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
-
-$testCredentials = New-CCredential -UserName "CarbonGrantPrivilege" -Password "a1b2c3d34#"
-$serviceName = 'CarbonGrantPrivilege'
-#$TestDir = New-TempDir
-$servicePath = Join-Path $TestDir \Service\NoOpService.exe -Resolve
+$userName = "CarbonGrantPrivilege"
+$password = "a1b2c3d4#"
+$serviceName = 'CarbonGrantPrivilegeTest'
+$servicePath = Join-Path -Path $PSScriptRoot -ChildPath 'Service\NoOpService.exe' -Resolve
 
 function InstallUser
 {
-    Install-CUser -Credential $testCredentials -Description 'Account for testing Carbon Grant-Privileges functions.'
-    #Install-CUser -Username $username -Password $password -Description 'Account for testing Carbon Grant-Privileges functions.'
+    Install-User -Credential (New-Credential -Username $userName -Password $password) -Description 'Account for testing Carbon Grant-Privileges functions.'
 }
 function UninstallUser
 {
-    Uninstall-CUser -Credential $testCredentials
-    #Uninstall-CUser -Username $username
+    Uninstall-User -Credential $testCredentials
+    #Uninstall-User -Username $username
 }
 
 function InstallService
 {
-    Install-CService -Name $serviceName 
-                     -Path $servicePath 
+    Install-Service  -Name $serviceName 
+                     -Path $servicePath
                      -StartupType Manual 
-                     -Credential $testCredentials
+                     #-Credential $testCredentials
+                     -userName $username
+                     -password $password
 }
 
 function StartService
