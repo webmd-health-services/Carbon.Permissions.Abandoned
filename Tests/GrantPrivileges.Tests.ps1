@@ -6,7 +6,8 @@ Set-StrictMode -Version 'Latest'
 
 $testCredentials = New-CCredential -UserName "CarbonGrantPrivilege" -Password "a1b2c3d34#"
 $serviceName = 'CarbonGrantPrivilege'
-#$servicePath = Join-Path $TestDir ..\Service\NoOpService.exe -Resolve
+#$TestDir = New-TempDir
+$servicePath = Join-Path $TestDir \Service\NoOpService.exe -Resolve
 
 function InstallUser
 {
