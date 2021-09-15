@@ -6,7 +6,7 @@ Set-StrictMode -Version 'Latest'
 
 $failed = $false
 $serviceName = 'CarbonGrantPrivilegeTest'
-$servicePath = Join-Path -Path $PSScriptRoot -ChildPath 'Service\NoOpService.exe' -Resolve
+$servicePath = Join-Path -Path $PSScriptRoot -ChildPath '\Functions\Service\NoOpService.exe' -Resolve
 $testCredentials = New-Credential -Username "CarbonGrantPrivilege" -Password "a1b2c3d4e5#!"
 $invalidIdentity = "IDONOTEXIST"
 $privilege = "SeBatchLogonRight"
