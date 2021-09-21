@@ -46,7 +46,9 @@ function GrantPrivilege
         [String]$givenPrivilege
     )
 
-    if ( -not (Grant-Privilege -Identity $givenIdentity -Privilege $givenPrivilege -ErrorAction SilentlyContinue) )
+    if ( -not (Grant-Privilege -Identity $givenIdentity `
+                               -Privilege $givenPrivilege `
+                               -ErrorAction SilentlyContinue) )
     {
         $script:failed = $true
         $failed = $true

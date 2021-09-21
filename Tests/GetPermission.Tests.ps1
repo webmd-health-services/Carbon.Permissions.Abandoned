@@ -35,13 +35,21 @@ function SetUpPath
     {
         New-Item -Path $containerPath -ItemType Directory -Force 
     }
-    $script:childPath = New-Item -Path $containerPath -Name 'Child1' -ItemType File -Force
+    $script:childPath = New-Item -Path $containerPath `
+                                 -Name 'Child1' `
+                                 -ItemType File `
+                                 -Force
 }
 
 function GrantPrivilege
 {
-    Grant-Permission -Path $containerPath -Identity $group1 -Permission Read
-    Grant-Permission -Path $childPath -Identity $user -Permission Read
+    Grant-Permission -Path $containerPath `
+                     -Identity $group1 `
+                     -Permission Read
+
+    Grant-Permission -Path $childPath `
+                     -Identity $user `
+                     -Permission Read
 }
 
 function CheckNormalPermissions

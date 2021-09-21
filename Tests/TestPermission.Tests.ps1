@@ -6,6 +6,7 @@ Set-StrictMode -Version 'Latest'
 . (Join-Path -Path $PSScriptRoot -ChildPath '\Functions\TempDirectory\New-TempDirectoryTree.ps1' -Resolve)
 
 $CarbonTestUser = New-Credential 'CarbonTestUser' -Password 'Tt6QM1lmDrFSf'
+$script:failed = $false
 $tempDir = $null
 $identity = $null
 $dirPath = $null
@@ -13,13 +14,18 @@ $filePath = $null
 $tempKeyPath = $null
 $keyPath = $null
 $childKeyPath = $null
-$privateKeypath = Join-Path -Path $PSScriptRoot -ChildPath '\Functions\Cryptography\CarbonTestPrivateKey.pfx' -Resolve
-
+$privateKeypath = Join-Path -Path $PSScriptRoot `
+                            -ChildPath '\Functions\Cryptography\CarbonTestPrivateKey.pfx' `
+                            -Resolve
 
 function Init
 {
-    $Global:Error.Clear()
     $script:identity = $CarbonTestUser.UserName
+}
+
+function Reset
+{
+    $Global:Error.Clear()
     $script:failed = $false
     $script:dirPath = $null
     $script:filePath = $null
@@ -30,7 +36,7 @@ function Init
 
 function CreateTempDirectoryTree
 {
-    $script:tempDir = New-TempDirectoryTree -Prefix 'Carbon-Test-TestPermission' @'
+    $tempDir = New-TempDirectoryTree -Prefix 'Carbon-Test-TestPermission' @'
 + Directory
   * File
 '@
@@ -38,16 +44,26 @@ function CreateTempDirectoryTree
     $script:filePath = Join-Path -Path $dirPath -ChildPath 'File'
     $script:tempKeyPath = 'hkcu:\Software\Carbon\Test'
     $script:keyPath = Join-Path -Path $tempKeyPath -ChildPath 'Test-Permission'
-    Grant-Permission -Identity $identity -Permission ReadAndExecute -Path $dirPath -ApplyTo 'ChildLeaves'
+
+    Grant-Permission -Identity $identity `
+                     -Permission ReadAndExecute `
+                     -Path $dirPath `
+                     -ApplyTo 'ChildLeaves'
 
     Install-RegistryKey -Path $keyPath
     $script:childKeyPath = Join-Path -Path $keyPath -ChildPath 'ChildKey'
-    Grant-Permission -Identity $identity -Permission 'ReadKey','WriteKey' -Path $keyPath -ApplyTo 'ChildLeaves'
+
+    Grant-Permission -Identity $identity `
+                     -Permission 'ReadKey','WriteKey' `
+                     -Path $keyPath `
+                     -ApplyTo 'ChildLeaves'
 }
 
 function TestExistingPath
 {
-    if ( -not (Test-Permission -Path $dirPath -Identity $identity -Permission 'FullControl') )
+    if ( -not (Test-Permission -Path $dirPath `
+                               -Identity $identity `
+                               -Permission 'FullControl') )
     {
         $script:failed = $true
     }
@@ -71,7 +87,11 @@ function TestPermission
         [Switch]$Inherited
     )
 
-    if ( -not ( Test-Permission -Path $givenPath -Identity $givenIdentity -Permission $givenPermission -Exact:$Exact -Inherited:$Inherited ) )
+    if ( -not ( Test-Permission -Path $givenPath `
+                                -Identity $givenIdentity `
+                                -Permission $givenPermission `
+                                -Exact:$Exact `
+                                -Inherited:$Inherited ) )
     {
         $script:failed = $true
     }
@@ -84,11 +104,17 @@ function TestPermissionOnPrivateKey
         [String]$Identity
     )
 
-    $cert = Install-Certificate -Path $privateKeyPath -StoreLocation LocalMachine -StoreName My 
+    $cert = Install-Certificate -Path $privateKeyPath `
+                                -StoreLocation LocalMachine `
+                                -StoreName My 
+
     try 
     {
         $certPath = Join-Path -Path 'cert:\LocalMachine\My' -ChildPath $cert.Thumbprint
-        Grant-Permission -Path $certPath -Identity $Identity -Permission 'GenericAll'
+
+        Grant-Permission -Path $certPath `
+                         -Identity $Identity `
+                         -Permission 'GenericAll'
 
         TestPermission -givenPath $certPath `
                        -givenIdentity $Identity `
@@ -100,8 +126,39 @@ function TestPermissionOnPrivateKey
     }
     finally
     {
-        Uninstall-Certificate -Thumbprint $cert.Thumbprint -StoreLocation LocalMachine -StoreName My
+        Uninstall-Certificate -Thumbprint $cert.Thumbprint `
+                              -StoreLocation LocalMachine `
+                              -StoreName My
     }
+}
+
+function TestPermissiononPublicKey
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [String]$Identity
+    )
+
+    $cert = Get-ChildItem 'cert:\*\*' -Recurse | 
+            Where-Object { -not $_.HasPrivateKey} |
+            Select-Object -First 1
+    
+    $certPath = Join-Path -Path 'cert:\' -ChildPath (Split-Path -NoQualifier -Path $cert.PSPath)
+
+    if((-not $cert ) -or ( -not $certPath ))
+    {
+        $script:failed = $true
+        return
+    }
+
+    TestPermission -givenPath $certPath `
+                   -givenIdentity $Identity `
+                   -givenPermission 'FullControl'
+
+    TestPermission -givenPath $certPath `
+                   -givenIdentity $Identity `
+                   -givenPermission 'FullControl' `
+                   -Exact
 }
 
 function ThenTestsPassed
@@ -116,6 +173,7 @@ function ThenTestsFailed
 }
 
 Describe 'TestPermission.when given an existing path and a valid identity with correct permissions.' {
+    AfterEach { Reset }
     It 'should work as expected.' {
         Init
         CreateTempDirectoryTree
@@ -125,6 +183,7 @@ Describe 'TestPermission.when given an existing path and a valid identity with c
 }
 
 Describe 'TestPermission.when given an existing path and a valid identity with incorrect permissions.' {
+    AfterEach { Reset }
     It 'should not return true.' {
         Init
         CreateTempDirectoryTree
@@ -134,6 +193,7 @@ Describe 'TestPermission.when given an existing path and a valid identity with i
 }
 
 Describe 'TestPermission.when given non-existing path and a valid identity and permissions.' {
+    AfterEach { Reset }
     It 'should throw path not found error.' {
         Init
         CreateTempDirectoryTree
@@ -142,6 +202,7 @@ Describe 'TestPermission.when given non-existing path and a valid identity and p
     }
 }
 Describe 'TestPermission.when given an existing path and a valid identity with correct exact permissions.' {
+    AfterEach { Reset }
     It 'should not return true. ' {
         Init
         CreateTempDirectoryTree
@@ -150,6 +211,7 @@ Describe 'TestPermission.when given an existing path and a valid identity with c
     }
 }
 Describe 'TestPermission.when given an existing path and a valid identity with improper exact permissions.' {
+    AfterEach { Reset }
     It 'should not return true. ' {
         Init
         CreateTempDirectoryTree
@@ -159,6 +221,7 @@ Describe 'TestPermission.when given an existing path and a valid identity with i
 }
 
 Describe 'TestPermission.when given inherited permission without inheritance flag.' {
+    AfterEach { Reset }
     It 'should return true. ' {
         Init
         CreateTempDirectoryTree
@@ -168,6 +231,7 @@ Describe 'TestPermission.when given inherited permission without inheritance fla
 
 }
 Describe 'TestPermission.when given inherited permission without inheritance flag.' {
+    AfterEach { Reset }
     It 'should exclude inherited permission and fail.' {
         Init 
         CreateTempDirectoryTree
@@ -176,6 +240,7 @@ Describe 'TestPermission.when given inherited permission without inheritance fla
     }
 }
 Describe 'TestPermission.when given inheritance and propagation flags on file. ' {
+    AfterEach { Reset }
     It 'should ignore flags and issue warning. '{
         Init
         CreateTempDirectoryTree
@@ -184,6 +249,7 @@ Describe 'TestPermission.when given inheritance and propagation flags on file. '
     }
 }
 Describe 'TestPermission.when given ungranted permission on registry. ' {
+    AfterEach { Reset }
     It 'should return false. ' {
         Init
         CreateTempDirectoryTree
@@ -192,6 +258,7 @@ Describe 'TestPermission.when given ungranted permission on registry. ' {
     }
 }
 Describe 'TestPermission.when checking correct granted permission on registry. ' {
+    AfterEach { Reset }
     It 'should return true. ' {
         Init
         CreateTempDirectoryTree
@@ -201,6 +268,7 @@ Describe 'TestPermission.when checking correct granted permission on registry. '
 }
 
 Describe 'TestPermission.when checking exact correct permissions on registry. ' {
+    AfterEach { Reset }
     It 'should return true. ' {
         Init
         CreateTempDirectoryTree
@@ -210,6 +278,7 @@ Describe 'TestPermission.when checking exact correct permissions on registry. ' 
 }
 
 Describe 'TestPermission.when checking granted inheritance flags. ' {
+    AfterEach { Reset }
     It 'should return true. ' {
         Init
         CreateTempDirectoryTree
@@ -221,6 +290,7 @@ Describe 'TestPermission.when checking granted inheritance flags. ' {
 }
 
 Describe 'TestPermission.when checking granted exact inheritance flags. ' {
+    AfterEach { Reset }
     It 'should return true. ' {
         Init 
         CreateTempDirectoryTree
@@ -230,10 +300,21 @@ Describe 'TestPermission.when checking granted exact inheritance flags. ' {
 }
 
 Describe 'TestPermission.when checking permission on a private key with correct permissions. ' { 
+    AfterEach { Reset }
     It 'should return true. ' {
         Init
         CreateTempDirectoryTree
         TestPermissionOnPrivateKey -Identity $identity
+        ThenTestsPassed
+    }
+}
+
+Describe 'TestPermission.when checking permission on a public key with correct permissions. ' { 
+    AfterEach { Reset }
+    It 'should return true. ' {
+        Init
+        CreateTempDirectoryTree
+        TestPermissionOnPublicKey -Identity $identity
         ThenTestsPassed
     }
 }
