@@ -21,6 +21,16 @@ $privateKeypath = Join-Path -Path $PSScriptRoot `
 function Init
 {
     $script:identity = $CarbonTestUser.UserName
+    $tempDir = New-TempDirectoryTree -Prefix 'Carbon-Test-TestPermission' @'
++ Directory
+  * File
+'@
+    $script:dirPath = Join-Path -Path $tempDir -ChildPath 'Directory'
+    $script:filePath = Join-Path -Path $dirPath -ChildPath 'File'
+    $script:tempKeyPath = 'hkcu:\Software\Carbon\Test'
+    $script:keyPath = Join-Path -Path $tempKeyPath -ChildPath 'Test-Permission'
+    Install-RegistryKey -Path $keyPath
+    $script:childKeyPath = Join-Path -Path $keyPath -ChildPath 'ChildKey'
 }
 
 function Reset
@@ -34,24 +44,54 @@ function Reset
     $script:childKeyPath = $null
 }
 
+function GivenUser
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.PSCredential]$User,
+
+        [String]$Description
+    )
+    Install-User -Credential $User -Description $Description
+}
+
+function WhenGrantingPermission
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [String]$Permission,
+
+        [Parameter(Mandatory=$true)]
+        [String]$To,
+
+        [Parameter(Mandatory=$true)]
+        [String]$On,
+
+        [Parameter(Mandatory=$true)]
+        [String]$ApplyTo
+    )
+
+    try
+    {
+        Grant-Permission -Path $On `
+                         -Identity $To `
+                         -Permission $Permission `
+                         -ApplyTo $ApplyTo
+    }
+    catch
+    {
+        $script:failed = $true
+    }
+}
 function CreateTempDirectoryTree
 {
-    $tempDir = New-TempDirectoryTree -Prefix 'Carbon-Test-TestPermission' @'
-+ Directory
-  * File
-'@
-    $script:dirPath = Join-Path -Path $tempDir -ChildPath 'Directory'
-    $script:filePath = Join-Path -Path $dirPath -ChildPath 'File'
-    $script:tempKeyPath = 'hkcu:\Software\Carbon\Test'
-    $script:keyPath = Join-Path -Path $tempKeyPath -ChildPath 'Test-Permission'
-
     Grant-Permission -Identity $identity `
                      -Permission ReadAndExecute `
                      -Path $dirPath `
                      -ApplyTo 'ChildLeaves'
 
-    Install-RegistryKey -Path $keyPath
-    $script:childKeyPath = Join-Path -Path $keyPath -ChildPath 'ChildKey'
+    #Install-RegistryKey -Path $keyPath
+    #$script:childKeyPath = Join-Path -Path $keyPath -ChildPath 'ChildKey'
 
     Grant-Permission -Identity $identity `
                      -Permission 'ReadKey','WriteKey' `
@@ -176,7 +216,9 @@ Describe 'TestPermission.when given an existing path and a valid identity with c
     AfterEach { Reset }
     It 'should work as expected.' {
         Init
-        CreateTempDirectoryTree
+        GivenUser -User $CarbonTestUser -Description 'User to test TestPermission.'
+        WhenGrantingPermission -Permission 'ReadAndExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
+        WhenGrantingPermission -Permission 'ReadAndExecute' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
         TestPermission -givenPath $dirPath -givenIdentity $identity -givenPermission 'ReadAndExecute'
         ThenTestsPassed
     }

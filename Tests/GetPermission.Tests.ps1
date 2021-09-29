@@ -6,11 +6,12 @@ Set-StrictMode -Version 'Latest'
 
 $failed = $false
 $user = 'CarbonTestUser1'
-$group1 = 'CarbonTestGroup1'
+$testGroup = 'CarbonTestGroup1'
 $password = 'a1z2b3y4!'
 $testCredentials = New-Credential -Username $user -Password $password
 $containerPath = $null
 $childPath = $null
+$testFile = $null
 
 function Init
 {
@@ -18,92 +19,116 @@ function Init
     $script:failed = $false
     $script:containerPath = $null
     $script:childPath = $null
+    $script:testFile = $null
 }
 
-function InstallUserandGroup
+function GivenUser
 {
-    Install-User -Credential $testCredentials -Description 'Account for testing Carbon Get-Permission'
-    Install-Group -Name $group1 -Description 'Group for testing Get-Permission'
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.PSCredential]$User,
+
+        [String]$Description
+    )
+    Install-User -Credential $User -Description $Description
 }
 
-function SetUpPath
+function GivenGroup
 {
+    param(
+        [Parameter(Mandatory=$true)]
+        [String]$Group,
+
+        [String]$Description
+    )
+    Install-Group -Name $Group -Description $Description
+}
+
+function GivenPathTo
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [String]$Item
+    )
     $script:containerPath = 'Carbon-Test-GetPermissions-{0}' -f ([IO.Path]::GetRandomFileName())
-    $script:containerPath = Join-Path -Path $env:Temp -ChildPath $containerPath
+    $script:containerPath = Join-Path -Path $TestDrive -ChildPath $containerPath
 
     if( -not ( Test-Path $containerPath ) )
     {
         New-Item -Path $containerPath -ItemType Directory -Force 
     }
-    $script:childPath = New-Item -Path $containerPath `
-                                 -Name 'Child1' `
-                                 -ItemType File `
-                                 -Force
+
+    $script:testFile = New-Item -Path $containerPath `
+                                -Name -$Item `
+                                -ItemType File `
+                                -Force
+
+    $script:childPath = $testFile
 }
 
-function GrantPrivilege
+function WhenGrantingPermission
 {
-    Grant-Permission -Path $containerPath `
-                     -Identity $group1 `
-                     -Permission Read
+    param(
+        [Parameter(Mandatory=$true)]
+        [String]$Permission,
 
-    Grant-Permission -Path $childPath `
-                     -Identity $user `
-                     -Permission Read
-}
+        [Parameter(Mandatory=$true)]
+        [String]$To,
 
-function CheckNormalPermissions
-{
-    $perms = Get-Permission -Path $childPath
-    if( -not ( $perms ) )
+        [Parameter(Mandatory=$true)]
+        [String]$On
+    )
+    try
     {
-        $script:failed = $true
-        return
+        Grant-Permission -Path $On `
+                         -Identity $To `
+                         -Permission $Permission
     }
-
-    $group1Perms = $perms | Where-Object { $_.IdentityReference.Value -like "*\$group1" }
-    if( $group1Perms )
+    catch
     {
         $script:failed = $true
-        return
-    }
-
-    $userPerms = $perms | Where-Object { $_.IdentityReference.Value -like "*\$user" }
-    if( (-not ( $userPerms ) ) -or ( -not ( $userPerms -is [Security.AccessControl.FileSystemAccessRule]) ) )
-    {
-        $script:failed = $true
-        return
     }
 }
 
-function CheckInheritedPermissions
+function ThenGrantedPermission
 {
-    $perms = Get-Permission -Path $childPath -Inherited
-    if( -not ( $perms ) )
-    {
-        $script:failed = $true
-        return
-    }
+    param(
+
+        [Parameter(Mandatory=$true)]
+        [String]$Permission,
     
-    $group1Perms = $perms | Where-Object { $_.IdentityReference.Value -like "*\$group1" }
+        [Parameter(Mandatory=$true)]
+        [String]$To,
+    
+        [Parameter(Mandatory=$true)]
+        [String]$On,
 
-    if( ( -not ( $group1Perms ) ) -or ( -not ( $group1Perms -is [Security.AccessControl.FileSystemAccessRule]) ) )
+        [Switch]$Inherited
+    )
+
+    $perms = Get-Permission -Path $On `
+                            -Identity $To `
+                            -Inherited:$Inherited
+
+    if( -not ( $perms ) )
     {
         $script:failed = $true
         return
     }
 
-    $userPerms = $perms | Where-Object { $_.IdentityReference.Value -like "*\$user" }
-    if( ( -not ( $userPerms) ) -or ( -not ($userPerms -is [Security.AccessControl.FileSystemAccessRule]) ) )
+    $checkPerms = $perms | Where-Object { $_.IdentityReference.Value -like "*\$($To)" }
+    
+    if( (-not ( $checkPerms ) ) -or ( -not ( $checkPerms.FileSystemRights -Match $Permission ) ) -or ( -not ( $checkPerms -is [Security.AccessControl.FileSystemAccessRule]) ) )
     {
         $script:failed = $true
         return
     }
 }
+
 
 function CheckSpecificUserPermissions
 {
-    $perms = Get-Permission -Path $childPath -Identity $group1
+    $perms = Get-Permission -Path $childPath -Identity $testGroup
     if( $perms )
     {
         $script:failed = $true
@@ -144,7 +169,7 @@ function CheckPrivateCertPermission
 
 function CheckSpecificInheritedUserPermissions
 {
-    $perms = Get-Permission -Path $childPath -Identity $group1 -Inherited
+    $perms = Get-Permission -Path $childPath -Identity $testGroup -Inherited
     if( ( -not $perms ) -or ( -not ( $perms -is [Security.AccessControl.FileSystemAccessRule] ) ) )
     {
         $script:failed = $true
@@ -172,84 +197,124 @@ function CheckSpecificIdentityCertPermission
         }
     }
 }
-
-function ThenPermissionGranted
+function ThenTestPassed
 {
     $script:failed | Should -BeFalse
     $Global:Error | Should -BeNullOrEmpty
 }
 
-function ThenPermissionDenied
+function ThenTestFailed
 {
-    param(
-        $WithErrorThatMatches
-    )
-
     $failed | Should -BeTrue
-    $Global:Error | Should -not -BeNullOrEmpty
-    $Global:Error | Should -Match $WithErrorThatMatches
 }
 
-Describe 'GetPermission.when given permission information' {
-    It 'should grant permission as expected' {
+Describe 'GetPermission.when given a user that has been given correct permissions.' {
+    It 'should grant the permission as expected.' {
         Init
-        InstallUserandGroup
-        SetUpPath
-        GrantPrivilege
-        CheckNormalPermissions
-        ThenPermissionGranted
+        GivenUser -User $testCredentials -Description 'User to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testCredentials.Username -On $testFile
+        ThenGrantedPermission -Permission 'Read' -To $testCredentials.Username -On $testFile
+        ThenTestPassed
+    }
+}
+Describe 'GetPermission.when given a user that not been given permission to a file.' {
+    It 'should not return true.' {
+        Init
+        GivenUser -User $testCredentials -Description 'User to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testCredentials.Username -On $testFile
+        ThenGrantedPermission -Permission 'Write' -To $testCredentials.Username -On $testFile
+        ThenTestFailed
     }
 }
 
-Describe 'GetPermission.when given inherited permissions' {
-    It 'should give correct inherited permissions' {
+Describe 'GetPermission.when given a group that has been given correct permissions.' {
+    It 'should grant permission as expected. ' {
         Init
-        InstallUserandGroup
-        SetUpPath
-        GrantPrivilege
-        CheckInheritedPermissions
-        ThenPermissionGranted
+        GivenGroup -Group $testGroup -Description 'Group to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testGroup -On $testFile
+        ThenGrantedPermission -Permission 'Read' -To $testGroup -On $testFile
+        ThenTestPassed
     }
 }
 
-Describe 'GetPermission.when attempting to give specific user permissions' {
-    It 'should give correct inherited permissions' {
+Describe 'GetPermission.when given a group that has not been given correct permissions.' {
+    It 'should not return true. ' {
         Init
-        InstallUserandGroup
-        SetUpPath
-        GrantPrivilege
+        GivenGroup -Group $testGroup -Description 'Group to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testGroup -On $testFile
+        ThenGrantedPermission -Permission 'Write' -To $testGroup -On $testFile
+        ThenTestFailed
+    }
+}
+
+Describe 'GetPermission.when given a user that has been given inherited permissions.' {
+    It 'should grant the permission as expected.' {
+        Init
+        GivenUser -User $testCredentials -Description 'User to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testCredentials.Username -On $testFile
+        ThenGrantedPermission -Permission 'Read' -To $testCredentials.Username -On $testFile -Inherited
+        ThenTestPassed
+    }
+}
+Describe 'GetPermission.when given a group that has been given correct permissions.' {
+    It 'should grant permission as expected. ' {
+        Init
+        GivenGroup -Group $testGroup -Description 'Group to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testGroup -On $testFile
+        ThenGrantedPermission -Permission 'Read' -To $testGroup -On $testFile
+        ThenTestPassed
+    }
+}
+
+
+Describe 'GetPermission.when attempting to give specific user permissions.' {
+    It 'should give correct inherited permissions.' {
+        Init
+        GivenUser -User $testCredentials -Description 'User to test credentials.'
+        GivenGroup -Group $testGroup -Description 'Group to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testCredentials.Username -On $testFile
+        ThenGrantedPermission -Permission 'Read' -To $testCredentials.Username -On $testFile
         CheckSpecificUserPermissions
-        ThenPermissionGranted
+        ThenTestPassed
     }
 }
 
-Describe 'GetPermission.when attempting to give specific inherited user permissions' {
+Describe 'GetPermission.when attempting to give specific inherited group permissions.' {
     It 'should give correct inherited permissions' {
         Init
-        InstallUserandGroup
-        SetUpPath
-        GrantPrivilege
+        GivenGroup -Group $testGroup -Description 'Group to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testGroup -On $testFile
+        ThenGrantedPermission -Permission 'Read' -To $testGroup -On $testFile -Inherited
         CheckSpecificInheritedUserPermissions
-        ThenPermissionGranted
+        ThenTestPassed
     }
 }
 Describe 'GetPermission.when attempting to give private certificate permission permissions' {
     It 'should give permission' {
         Init
-        InstallUserandGroup
-        SetUpPath
-        GrantPrivilege
+        GivenUser -User $testCredentials -Description 'User to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testCredentials.Username -On $testFile
+        CheckSpecificUserPermissions
         CheckPrivateCertPermission
-        ThenPermissionGranted
+        ThenTestPassed
     }
 }
 Describe 'GetPermission.when attempting to give a specific identity certificate permissions' {
     It 'should give permission' {
         Init
-        InstallUserandGroup
-        SetUpPath
-        GrantPrivilege
+        GivenUser -User $testCredentials -Description 'User to test credentials.'
+        GivenPathTo -Item "test.txt"
+        WhenGrantingPermission -Permission 'Read' -To $testCredentials.Username -On $testFile
         CheckSpecificIdentityCertPermission
-        ThenPermissionGranted
+        ThenTestPassed
     }
 }
