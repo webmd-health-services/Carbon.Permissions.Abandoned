@@ -25,7 +25,7 @@ function Init
 function GivenUser
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [System.Management.Automation.PSCredential]$User,
 
         [String]$Description
@@ -36,7 +36,7 @@ function GivenUser
 function GivenGroup
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Group,
 
         [String]$Description
@@ -47,7 +47,7 @@ function GivenGroup
 function GivenPathTo
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Item
     )
     $script:containerPath = 'Carbon-Test-GetPermissions-{0}' -f ([IO.Path]::GetRandomFileName())
@@ -69,13 +69,13 @@ function GivenPathTo
 function WhenGrantingPermission
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Permission,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$To,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$On
     )
     try
@@ -94,13 +94,13 @@ function ThenGrantedPermission
 {
     param(
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Permission,
     
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$To,
     
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$On,
 
         [Switch]$Inherited

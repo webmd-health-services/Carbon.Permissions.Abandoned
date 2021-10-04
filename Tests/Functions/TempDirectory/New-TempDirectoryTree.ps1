@@ -66,19 +66,19 @@ function New-TempDirectoryTree
     #>
     [CmdletBinding(DefaultParameterSetName='TempPath')]
     param(
-        [Parameter(Mandatory=$true,Position=1)]
+        [Parameter(Mandatory,Position=1)]
         [AllowEmptyString()]
-        [string]
+        [String]
         # The directory tree to create.
         $Tree,
         
         [Parameter(ParameterSetName='TempPath')]
-        [string]
+        [String]
         # An optional prefix for the temporary directory's name.
         $Prefix,
 
-        [Parameter(Mandatory=$true,ParameterSetName='ExistingPath')]
-        [string]
+        [Parameter(Mandatory,ParameterSetName='ExistingPath')]
+        [String]
         # The path where the directory tree should be created.  Defaults to a new directory in the `$env:TEMP` directory.
         $Path
     )

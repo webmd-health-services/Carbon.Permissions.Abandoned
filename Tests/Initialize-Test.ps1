@@ -17,8 +17,8 @@ Execute this script as the first thing in each of your test fixtures:
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
 #>
 [CmdletBinding()]
-param(
-)
+    param(
+    )
 
 $originalVerbosePref = $Global:VerbosePreference
 $originalWhatIfPref = $Global:WhatIfPreference

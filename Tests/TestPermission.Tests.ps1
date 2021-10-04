@@ -47,7 +47,7 @@ function Reset
 function GivenUser
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [System.Management.Automation.PSCredential]$User,
 
         [String]$Description
@@ -58,16 +58,16 @@ function GivenUser
 function WhenGrantingPermission
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Permission,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$To,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$On,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$ApplyTo
     )
 
@@ -113,13 +113,13 @@ function TestPermission
 {
     param(
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$givenPath,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$givenIdentity,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$givenPermission,
 
         [Switch]$Exact,
@@ -140,7 +140,7 @@ function TestPermission
 function TestPermissionOnPrivateKey
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Identity
     )
 
@@ -175,7 +175,7 @@ function TestPermissionOnPrivateKey
 function TestPermissiononPublicKey
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Identity
     )
 
@@ -217,9 +217,9 @@ Describe 'TestPermission.when given an existing path and a valid identity with c
     It 'should work as expected.' {
         Init
         GivenUser -User $CarbonTestUser -Description 'User to test TestPermission.'
-        WhenGrantingPermission -Permission 'ReadAndExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
-        WhenGrantingPermission -Permission 'ReadAndExecute' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
-        TestPermission -givenPath $dirPath -givenIdentity $identity -givenPermission 'ReadAndExecute'
+        WhenGrantingPermission -Permission 'FullControl' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
+        WhenGrantingPermission -Permission 'FullControl' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
+        TestPermission -givenPath $dirPath -givenIdentity $identity -givenPermission 'FullControl'
         ThenTestsPassed
     }
 }

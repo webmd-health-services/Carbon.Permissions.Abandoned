@@ -22,7 +22,7 @@ function Reset
 function GivenUser
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [System.Management.Automation.PSCredential]$User,
 
         [String]$Description
@@ -33,16 +33,16 @@ function GivenUser
 function GivenService
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Service,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Path,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$StartupType,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [System.Management.Automation.PSCredential]$User
     )
     try 
@@ -62,7 +62,7 @@ function GivenService
 function StartService
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Service
 
     )
@@ -71,7 +71,7 @@ function StartService
 function StopService
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Service
     )
     Stop-Service $Service
@@ -80,10 +80,10 @@ function StopService
 function WhenGrantingPrivilege
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Privilege,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$To
     )
     try
@@ -100,10 +100,10 @@ function WhenGrantingPrivilege
 function WhenRevokingPrivilege
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Privilege,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$To
     )
     try
@@ -119,10 +119,10 @@ function WhenRevokingPrivilege
 function ThenPrivilegeGranted
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Privilege,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$To
     )
 
@@ -134,10 +134,10 @@ function ThenPrivilegeGranted
 function ThenPrivilegeRevoked
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$Privilege,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [String]$To
     )
 

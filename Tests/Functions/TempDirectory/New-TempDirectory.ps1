@@ -38,7 +38,7 @@ function New-TempDirectory
     #>
     param(
         [Parameter(Position=0)]
-        [string]
+        [String]
         # An optional prefix for the temporary directory name.  Helps in identifying tests and things that don't properly clean up after themselves.
         $Prefix
     )
