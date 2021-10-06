@@ -21,11 +21,6 @@ $privateKeypath = Join-Path -Path $PSScriptRoot `
 function Init
 {
     $script:identity = $CarbonTestUser.UserName
-    #$tempDir = New-TempDirectoryTree -Prefix 'Carbon-Test-TestPermission' @'
-#+ Directory
-#  * File
-#'@
-
     $script:dirPath = New-Item -Path $TestDrive -ItemType Directory -Name 'Directory' -Force
     $null = New-Item -Path $dirPath -ItemType 'File' -Name 'File1'
     $script:filePath = Join-Path -Path $dirPath -ChildPath 'File1'

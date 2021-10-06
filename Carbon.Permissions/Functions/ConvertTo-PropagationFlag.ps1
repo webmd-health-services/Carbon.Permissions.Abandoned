@@ -27,7 +27,7 @@ function ConvertTo-PropagationFlag
         # The value to convert to an `PropagationFlags` value.
         [Parameter(Mandatory)]
         [CarbonPermissionsContainerInheritanceFlags]
-		[Alias('ContainerInheritanceFlags')]
+        [Alias('ContainerInheritanceFlags')]
         $ContainerInheritanceFlag
     )
 

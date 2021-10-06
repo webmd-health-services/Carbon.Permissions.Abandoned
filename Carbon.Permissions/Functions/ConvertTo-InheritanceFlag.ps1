@@ -27,7 +27,7 @@ function ConvertTo-InheritanceFlag
         # The value to convert to an `InheritanceFlags` value.
         [Parameter(Mandatory)]
         [CarbonPermissionsContainerInheritanceFlags]
-		[Alias('ContainerInheritanceFlags')]
+        [Alias('ContainerInheritanceFlags')]
         $ContainerInheritanceFlag
     )
 
