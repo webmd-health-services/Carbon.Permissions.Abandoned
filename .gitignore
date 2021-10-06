@@ -1,4 +1,4 @@
 /.output
 /PSModules
 /.vscode
-/.Carbon.Cryptography/Modules
+/Carbon.Permissions/Modules
