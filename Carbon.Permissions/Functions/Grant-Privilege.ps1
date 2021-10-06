@@ -1,5 +1,5 @@
 
-function Grant-CPrivilege
+function Grant-Privilege
 {
     <#
     .SYNOPSIS
@@ -58,9 +58,6 @@ function Grant-CPrivilege
     Get-CPrivilege
     
     .LINK
-    Revoke-CPrivilege
-    
-    .LINK
     Test-CPrivilege
     
     .LINK
@@ -76,15 +73,14 @@ function Grant-CPrivilege
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
+
         # The identity to grant a privilege.
-        $Identity,
+        [Parameter(Mandatory)]
+        [String]$Identity,
         
-        [Parameter(Mandatory=$true)]
-        [string[]]
         # The privileges to grant. *Privilege names are **case-sensitive**.*
-        $Privilege
+        [Parameter(Mandatory)]
+        [String[]]$Privilege
     )
 
     Set-StrictMode -Version 'Latest'

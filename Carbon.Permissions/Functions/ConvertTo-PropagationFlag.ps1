@@ -1,5 +1,5 @@
 
-function ConvertTo-CPropagationFlag
+function ConvertTo-PropagationFlag
 {
     <#
     .SYNOPSIS
@@ -24,9 +24,9 @@ function ConvertTo-CPropagationFlag
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [Carbon.Security.ContainerInheritanceFlags]
         # The value to convert to an `PropagationFlags` value.
+        [Parameter(Mandatory)]
+        [CarbonPermissionsContainerInheritanceFlags]
 		[Alias('ContainerInheritanceFlags')]
         $ContainerInheritanceFlag
     )
@@ -60,5 +60,4 @@ function ConvertTo-CPropagationFlag
     Write-Error ('Unknown Carbon.Security.ContainerInheritanceFlags enumeration value {0}.' -f $ContainerInheritanceFlag) 
 }
 
-Set-Alias -Name 'ConvertTo-PropagationFlags' -Value 'ConvertTo-CPropagationFlag'
 

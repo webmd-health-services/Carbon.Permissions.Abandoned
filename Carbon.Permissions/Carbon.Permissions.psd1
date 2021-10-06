@@ -76,9 +76,6 @@
 
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
-        'ConvertTo-InheritanceFlag',
-        'ConvertTo-PropagationFlag',
-        'ConvertTo-ProviderAccessControlRights',
         'Get-Permission',
         'Grant-Permission',
         'Grant-Privilege',
@@ -134,5 +131,5 @@
     # HelpInfoURI = ''
 
     # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-    # DefaultCommandPrefix = ''
+    DefaultCommandPrefix = 'C'
 }

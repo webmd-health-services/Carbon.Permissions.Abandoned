@@ -1,5 +1,5 @@
 
-function Get-CPermission
+function Get-Permission
 {
     <#
     .SYNOPSIS
@@ -19,19 +19,7 @@ function Get-CPermission
     Carbon_Permission
 
     .LINK
-    Disable-CAclInheritance
-
-    .LINK
-    Enable-CAclInheritance
-
-    .LINK
-    Get-CPermission
-
-    .LINK
     Grant-CPermission
-
-    .LINK
-    Revoke-CPermission
 
     .LINK
     Test-CPermission
@@ -59,18 +47,15 @@ function Get-CPermission
     [CmdletBinding()]
     [OutputType([System.Security.AccessControl.AccessRule])]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The path whose permissions (i.e. access control rules) to return. File system, registry, or certificate paths supported. Wildcards supported.
-        $Path,
+        [Parameter(Mandatory)]
+        [String]$Path,
         
-        [string]
         # The identity whose permissiosn (i.e. access control rules) to return.
-        $Identity,
+        [String]$Identity,
         
-        [Switch]
         # Return inherited permissions in addition to explicit permissions.
-        $Inherited
+        [Switch]$Inherited
     )
    
     Set-StrictMode -Version 'Latest'
@@ -126,6 +111,3 @@ function Get-CPermission
             return $true
         }    
 }
-
-Set-Alias -Name 'Get-Permissions' -Value 'Get-CPermission'
-

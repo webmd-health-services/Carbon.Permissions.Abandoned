@@ -15,16 +15,14 @@ function ConvertTo-ProviderAccessControlRights
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('FileSystem','Registry','CryptoKey')]
-        [string]
         # The provider name.
-        $ProviderName,
+        [Parameter(Mandatory)]
+        [ValidateSet('FileSystem','Registry','CryptoKey')]
+        [String]$ProviderName,
 
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-        [string[]]
         # The values to convert.
-        $InputObject
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [String[]]$InputObject
     )
 
     begin

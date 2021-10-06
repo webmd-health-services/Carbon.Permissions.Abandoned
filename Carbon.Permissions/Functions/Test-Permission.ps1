@@ -1,5 +1,5 @@
 
-function Test-CPermission
+function Test-Permission
 {
     <#
     .SYNOPSIS
@@ -71,32 +71,26 @@ function Test-CPermission
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The path on which the permissions should be checked.  Can be a file system or registry path.
-        $Path,
+        [Parameter(Mandatory)]
+        [String]$Path,
         
-        [Parameter(Mandatory=$true)]
-        [string]
         # The user or group whose permissions to check.
-        $Identity,
-        
-        [Parameter(Mandatory=$true)]
-        [string[]]
+        [Parameter(Mandatory)]
+        [String]$Identity,
+       
         # The permission to test for: e.g. FullControl, Read, etc.  For file system items, use values from [System.Security.AccessControl.FileSystemRights](http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.filesystemrights.aspx).  For registry items, use values from [System.Security.AccessControl.RegistryRights](http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.registryrights.aspx).
-        $Permission,
-        
-        [Carbon.Security.ContainerInheritanceFlags]
+        [Parameter(Mandatory)]
+        [String[]]$Permission,
+       
         # The container and inheritance flags to check. Ignored if `Path` is a file. These are ignored if not supplied. See `Grant-CPermission` for detailed explanation of this parameter. This controls the inheritance and propagation flags.  Default is full inheritance, e.g. `ContainersAndSubContainersAndLeaves`. This parameter is ignored if `Path` is to a leaf item.
-        $ApplyTo,
+        [CarbonPermissionsContainerInheritanceFlags]$ApplyTo,
 
-        [Switch]
         # Include inherited permissions in the check.
-        $Inherited,
+        [Switch]$Inherited,
 
-        [Switch]
         # Check for the exact permissions, inheritance flags, and propagation flags, i.e. make sure the identity has *only* the permissions you specify.
-        $Exact
+        [Switch]$Exact
     )
 
     Set-StrictMode -Version 'Latest'
@@ -115,7 +109,34 @@ function Test-CPermission
         return
     }
 
-    $providerName = Get-CPathProvider -Path $Path | Select-Object -ExpandProperty 'Name'
+    $pathQualifier = Split-Path -Qualifier $Path -ErrorAction SilentlyContinue
+    if( -not $pathQualifier )
+    {
+        $Path = Join-Path -Path (Get-Location) -ChildPath $Path
+        $pathQualifier = Split-Path -Qualifier $Path -ErrorAction SilentlyContinue
+        if( -not $pathQualifier )
+        {
+            Write-Error "Qualifier for path '$Path' not found."
+            return
+        }
+    }
+    $pathQualifier = $pathQualifier.Trim(':')
+    $drive = Get-PSDrive -Name $pathQualifier -ErrorACtion Ignore
+    if ( -not $drive )
+    {
+        $drive = Get-PSDrive -PSProvider $pathQualifier -ErrorACtion Ignore
+        if( -not $drive )
+        {
+            Write-Error -Message ('Unable to determine the provider for path {0}.' -f $Path)
+            return
+        }
+    }
+
+    $providerName = $drive | 
+                        Select-Object -First 1 |
+                        Select-Object -ExpandProperty 'Provider' |
+                        Select-Object -ExpandProperty 'Name'
+
     if( $providerName -eq 'Certificate' )
     {
         $providerName = 'CryptoKey'

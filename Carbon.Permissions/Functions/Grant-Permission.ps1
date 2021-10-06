@@ -1,4 +1,4 @@
-function Grant-CPermission
+function Grant-Permission
 {
     <#
     .SYNOPSIS
@@ -13,13 +13,13 @@ function Grant-CPermission
         [Enum]::GetValues([Security.AccessControl.RegistryRights])
         [Enum]::GetValues([Security.AccessControl.CryptoKeyRights])
 
-    Beginning with Carbon 2.0, permissions are only granted if they don't exist on an item (inherited permissions are ignored).  If you always want to grant permissions, use the `Force` switch.  
+    If you always want to grant permissions, use the `Force` switch.  
 
-    Before Carbon 2.0, this function returned any new/updated access rules set on `Path`. In Carbon 2.0 and later, use the `PassThru` switch to get an access rule object back (you'll always get one regardless if the permissions changed or not).
+    Use the `PassThru` switch to get an access rule object back (you'll always get one regardless if the permissions changed or not).
 
-    By default, permissions allowing access are granted. Beginning in Carbon 2.3.0, you can grant permissions denying access by passing `Deny` as the value of the `Type` parameter.
+    By default, permissions allowing access are granted. You can grant permissions denying access by passing `Deny` as the value of the `Type` parameter.
 
-    Beginning in Carbon 2.7, you can append/add rules instead or replacing existing rules on files, directories, or registry items with the `Append` switch. 
+    You can append/add rules instead or replacing existing rules on files, directories, or registry items with the `Append` switch. 
 
     ## Directories and Registry Keys
 
@@ -96,16 +96,7 @@ function Grant-CPermission
     ConvertTo-CContainerInheritanceFlags
 
     .LINK
-    Disable-CAclInheritance
-
-    .LINK
-    Enable-CAclInheritance
-
-    .LINK
     Get-CPermission
-
-    .LINK
-    Revoke-CPermission
 
     .LINK
     Test-CPermission
@@ -156,42 +147,37 @@ function Grant-CPermission
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([Security.AccessControl.AccessRule])]
     param(
-        [Parameter(Mandatory)]
         # The path on which the permissions should be granted.  Can be a file system, registry, or certificate path.
+        [Parameter(Mandatory)]
         [String]$Path,
         
-        [Parameter(Mandatory)]
         # The user or group getting the permissions.
+        [Parameter(Mandatory)]
         [String]$Identity,
-        
+       
+        # The permission: e.g. FullControl, Read, etc.  For file system items, use values from [System.Security.AccessControl.FileSystemRights](http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.filesystemrights.aspx).  For registry items, use values from [System.Security.AccessControl.RegistryRights](http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.registryrights.aspx).
         [Parameter(Mandatory)]
 		[Alias('Permissions')]
-        # The permission: e.g. FullControl, Read, etc.  For file system items, use values from [System.Security.AccessControl.FileSystemRights](http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.filesystemrights.aspx).  For registry items, use values from [System.Security.AccessControl.RegistryRights](http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.registryrights.aspx).
         [String[]]$Permission,
         
         # How to apply container permissions.  This controls the inheritance and propagation flags.  Default is full inheritance, e.g. `ContainersAndSubContainersAndLeaves`. This parameter is ignored if `Path` is to a leaf item.
-        [Carbon.Security.ContainerInheritanceFlags]$ApplyTo = ([Carbon.Security.ContainerInheritanceFlags]::ContainerAndSubContainersAndLeaves),
+        [CarbonPermissionsContainerInheritanceFlags]$ApplyTo = ([CarbonPermissionsContainerInheritanceFlags]::ContainerAndSubContainersAndLeaves),
 
         # The type of rule to apply, either `Allow` or `Deny`. The default is `Allow`, which will allow access to the item. The other option is `Deny`, which will deny access to the item.
         #
-        # This parameter was added in Carbon 2.3.0.
         [Security.AccessControl.AccessControlType]$Type = [Security.AccessControl.AccessControlType]::Allow,
         
         # Removes all non-inherited permissions on the item.
-        [switch]$Clear,
+        [Switch]$Clear,
 
         # Returns an object representing the permission created or set on the `Path`. The returned object will have a `Path` propery added to it so it can be piped to any cmdlet that uses a path. 
-        #
-        # The `PassThru` switch is new in Carbon 2.0.
-        [switch]$PassThru,
+        [Switch]$PassThru,
 
         # Grants permissions, even if they are already present.
-        [switch]$Force,
+        [Switch]$Force,
 
         # When granting permissions on files, directories, or registry items, add the permissions as a new access rule instead of replacing any existing access rules. This switch is ignored when setting permissions on certificates.
-        #
-        # This switch was added in Carbon 2.7.
-        [switch]$Append
+        [Switch]$Append
     )
 
     Set-StrictMode -Version 'Latest'
@@ -276,7 +262,7 @@ function Grant-CPermission
                         return
                     }
                 
-                    $grantPermissionParams = [Collections.Generic.Dictionary[[string], [object]]]::New($PSBoundParameters)
+                    $grantPermissionParams = [Collections.Generic.Dictionary[[String], [object]]]::New($PSBoundParameters)
                     $grantPermissionParams.Remove('Path')
 
                     foreach( $privateKeyFile in $privateKeyFiles )
@@ -419,6 +405,3 @@ function Grant-CPermission
         }
     }
 }
-
-Set-Alias -Name 'Grant-Permissions' -Value 'Grant-CPermission'
-

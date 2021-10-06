@@ -3,17 +3,14 @@ function Set-CryptoKeySecurity
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [Security.Cryptography.X509Certificates.X509Certificate2]
-        $Certificate,
+        [Parameter(Mandatory)]
+        [Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
 
-        [Parameter(Mandatory=$true)]
-        [Security.AccessControl.CryptoKeySecurity]
-        $CryptoKeySecurity,
+        [Parameter(Mandatory)]
+        [Security.AccessControl.CryptoKeySecurity]$CryptoKeySecurity,
 
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Action
+        [Parameter(Mandatory)]
+        [String]$Action
     )
 
     Set-StrictMode -Version 'Latest'
