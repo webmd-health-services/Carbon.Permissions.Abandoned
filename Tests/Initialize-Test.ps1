@@ -31,7 +31,6 @@ Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carb
 try
 {
     $modules = [ordered]@{
-        'Carbon' = '..\PSModules\Carbon';
         'Carbon.Permissions' = '..\Carbon.Permissions';
         'Carbon.PermissionsTestHelper' = 'Carbon.PermissionsTestHelper';
     }

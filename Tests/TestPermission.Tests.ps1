@@ -3,7 +3,6 @@
 Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
-. (Join-Path -Path $PSScriptRoot -ChildPath '\Functions\TempDirectory\New-TempDirectoryTree.ps1' -Resolve)
 
 $CarbonTestUser = New-Credential 'CarbonTestUser' -Password 'Tt6QM1lmDrFSf'
 $script:failed = $false
@@ -86,9 +85,6 @@ function CreateTempDirectoryTree
                      -Permission ReadAndExecute `
                      -Path $dirPath `
                      -ApplyTo 'ChildLeaves'
-
-    #Install-RegistryKey -Path $keyPath
-    #$script:childKeyPath = Join-Path -Path $keyPath -ChildPath 'ChildKey'
 
     Grant-Permission -Identity $identity `
                      -Permission 'ReadKey','WriteKey' `
