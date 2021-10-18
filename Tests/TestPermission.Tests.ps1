@@ -4,6 +4,8 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
 
+Import-Module -Name 'Carbon' 
+
 $CarbonTestUser = New-Credential 'CarbonTestUser' -Password 'Tt6QM1lmDrFSf'
 $script:failed = $false
 $tempDir = $null
@@ -317,8 +319,7 @@ Describe 'TestPermission.when checking granted inheritance flags. ' {
     It 'should return true. ' {
         Init
         CreateTempDirectoryTree
-        { Test-Permission -Path $dirPath -Identity $identity -Permission 'ReadAndExecute' -ApplyTo ContainerandLeaves } |
-            Should -BeTrue
+        { Test-Permission -Path $dirPath -Identity $identity -Permission 'ReadAndExecute' -ApplyTo ContainerandLeaves }| Should -BeTrue
         { Test-Permission -Path $dirPath -Identity $identity -Permission 'ReadAndExecute' -ApplyTo ChildLeaves } | 
             Should -BeTrue
     }
