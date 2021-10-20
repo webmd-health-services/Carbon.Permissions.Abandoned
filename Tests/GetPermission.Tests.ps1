@@ -4,13 +4,13 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
 
-Import-Module -Name '..\PSModules\Carbon' -Verbose -Scope Local -Function 'New-Credential'
+Import-Module -Name '..\PSModules\Carbon' -Verbose -Scope Local -Function 'New-CCredential', 'Install-CUser', 'Install-CGroup', 'Test-CIdentity'
 
 $failed = $false
 $user = 'CarbonTestUser1'
 $testGroup = 'CarbonTestGroup1'
 $password = 'a1z2b3y4!'
-$testCredentials = New-Credential -Username $user -Password $password
+$testCredentials = New-CCredential -Username $user -Password $password
 $containerPath = $null
 $childPath = $null
 $testFile = $null
@@ -32,7 +32,7 @@ function GivenUser
 
         [String]$Description
     )
-    Install-User -Credential $User -Description $Description
+    Install-CUser -Credential $User -Description $Description
 }
 
 function GivenGroup
@@ -43,7 +43,7 @@ function GivenGroup
 
         [String]$Description
     )
-    Install-Group -Name $Group -Description $Description
+    Install-CGroup -Name $Group -Description $Description
 }
 
 function GivenPathTo
@@ -82,7 +82,7 @@ function WhenGrantingPermission
     )
     try
     {
-        Grant-Permission -Path $On `
+        Grant-CPermission -Path $On `
                          -Identity $To `
                          -Permission $Permission
     }
@@ -108,7 +108,7 @@ function ThenGrantedPermission
         [Switch]$Inherited
     )
 
-    $perms = Get-Permission -Path $On `
+    $perms = Get-CPermission -Path $On `
                             -Identity $To `
                             -Inherited:$Inherited
 
@@ -130,14 +130,14 @@ function ThenGrantedPermission
 
 function CheckSpecificUserPermissions
 {
-    $perms = Get-Permission -Path $childPath -Identity $testGroup
+    $perms = Get-CPermission -Path $childPath -Identity $testGroup
     if( $perms )
     {
         $script:failed = $true
         return
     }
 
-    $perms = @( Get-Permission -Path $childPath -Identity $user )
+    $perms = @( Get-CPermission -Path $childPath -Identity $user )
     if( -not ( $perms[0] -is [Security.AccessControl.FileSystemAccessRule] ) )
     {
         $script:failed = $true
@@ -171,7 +171,7 @@ function CheckPrivateCertPermission
 
 function CheckSpecificInheritedUserPermissions
 {
-    $perms = Get-Permission -Path $childPath -Identity $testGroup -Inherited
+    $perms = Get-CPermission -Path $childPath -Identity $testGroup -Inherited
     if( ( -not $perms ) -or ( -not ( $perms -is [Security.AccessControl.FileSystemAccessRule] ) ) )
     {
         $script:failed = $true
@@ -187,10 +187,10 @@ function CheckSpecificIdentityCertPermission
     Where-Object { $_.PrivateKey } |
     ForEach-Object { Join-Path -Path 'cert:' -ChildPath (Split-Path -NoQualifier -Path $_.PSPath) } |
     ForEach-Object { 
-        [object[]]$rules = Get-Permission -Path $_
+        [object[]]$rules = Get-CPermission -Path $_
         foreach( $rule in $rules )
         {
-            [object[]]$identityRule = Get-Permission -Path $_ -Identity $rule.IdentityReference.Value
+            [object[]]$identityRule = Get-CPermission -Path $_ -Identity $rule.IdentityReference.Value
             if( (-not $identityRule) -or ( $identityRule.Count -ge $rules.Count ) )
             {
                 $script:failed = $true
