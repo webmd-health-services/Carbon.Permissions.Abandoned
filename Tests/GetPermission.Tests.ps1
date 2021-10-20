@@ -82,7 +82,7 @@ function WhenGrantingPermission
     )
     try
     {
-        Grant-CPermission -Path $On `
+        Grant-Permission -Path $On `
                          -Identity $To `
                          -Permission $Permission
     }
@@ -153,7 +153,7 @@ function CheckPrivateCertPermission
         Where-Object { $_.HasPrivateKey } |
         Where-Object { $_.PrivateKey } |
         ForEach-Object { Join-Path -Path 'cert:' -ChildPath (Split-Path -NoQualifier -Path $_.PSPath) } |
-        ForEach-Object { Get-Permission -Path $_ } |
+        ForEach-Object { Get-CPermission -Path $_ } |
         ForEach-Object {
             $foundPermission = $true
             if( (-not $_) -and ( $_ -isNot [Security.AccessControl.CryptoKeyAccessRule]) )
