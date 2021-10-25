@@ -4,7 +4,8 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
 
-Import-Module -Name '..\PSModules\Carbon' -Verbose -Scope Local -Function 'New-CCredential', 'Install-CUser', 'Install-CGroup', 'Test-CIdentity'
+$carbonPath = Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon'
+Import-Module -Name $carbonPath -Verbose -Scope Local -Function 'New-CCredential', 'Install-CUser', 'Install-CGroup', 'Test-CIdentity'
 
 $failed = $false
 $user = 'CarbonTestUser1'
