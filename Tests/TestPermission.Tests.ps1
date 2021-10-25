@@ -4,11 +4,13 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
 
-Import-Module -Name 'Carbon' 
+#Import-Module -Name 'Carbon' 
 
-$CarbonTestUser = New-Credential 'CarbonTestUser' -Password 'Tt6QM1lmDrFSf'
+$carbonPath = Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon'
+Import-Module -Name $carbonPath -Verbose -Scope Local -Function 'New-CCredential', 'Install-CRegistryKey', 'Install-CUser', 'Grant-CPermission', 'Test-CPermission'
+
+$CarbonTestUser = New-CCredential 'CarbonTestUser' -Password 'Tt6QM1lmDrFSf'
 $script:failed = $false
-$tempDir = $null
 $identity = $null
 $dirPath = $null
 $filePath = $null
@@ -27,7 +29,7 @@ function Init
     $script:filePath = Join-Path -Path $dirPath -ChildPath 'File1'
     $script:tempKeyPath = 'hkcu:\Software\Carbon\Test'
     $script:keyPath = Join-Path -Path $tempKeyPath -ChildPath 'Test-Permission'
-    Install-RegistryKey -Path $keyPath
+    Install-CRegistryKey -Path $keyPath
     $script:childKeyPath = Join-Path -Path $keyPath -ChildPath 'ChildKey'
 }
 
@@ -50,7 +52,7 @@ function GivenUser
 
         [String]$Description
     )
-    Install-User -Credential $User -Description $Description
+    Install-CUser -Credential $User -Description $Description
 }
 
 function WhenGrantingPermission
@@ -71,7 +73,7 @@ function WhenGrantingPermission
 
     try
     {
-        Grant-Permission -Path $On `
+        Grant-CPermission -Path $On `
                          -Identity $To `
                          -Permission $Permission `
                          -ApplyTo $ApplyTo
@@ -83,12 +85,12 @@ function WhenGrantingPermission
 }
 function CreateTempDirectoryTree
 {
-    Grant-Permission -Identity $identity `
+    Grant-CPermission -Identity $identity `
                      -Permission ReadAndExecute `
                      -Path $dirPath `
                      -ApplyTo 'ChildLeaves'
 
-    Grant-Permission -Identity $identity `
+    Grant-CPermission -Identity $identity `
                      -Permission 'ReadKey','WriteKey' `
                      -Path $keyPath `
                      -ApplyTo 'ChildLeaves'
@@ -96,7 +98,7 @@ function CreateTempDirectoryTree
 
 function TestExistingPath
 {
-    if ( -not (Test-Permission -Path $dirPath `
+    if ( -not (Test-CPermission -Path $dirPath `
                                -Identity $identity `
                                -Permission 'FullControl') )
     {
@@ -122,7 +124,7 @@ function TestPermission
         [Switch]$Inherited
     )
 
-    if ( -not ( Test-Permission -Path $givenPath `
+    if ( -not ( Test-CPermission -Path $givenPath `
                                 -Identity $givenIdentity `
                                 -Permission $givenPermission `
                                 -Exact:$Exact `
@@ -139,7 +141,7 @@ function TestPermissionOnPrivateKey
         [String]$Identity
     )
 
-    $cert = Install-Certificate -Path $privateKeyPath `
+    $cert = Install-CCertificate -Path $privateKeyPath `
                                 -StoreLocation LocalMachine `
                                 -StoreName My 
 
@@ -147,7 +149,7 @@ function TestPermissionOnPrivateKey
     {
         $certPath = Join-Path -Path 'cert:\LocalMachine\My' -ChildPath $cert.Thumbprint
 
-        Grant-Permission -Path $certPath `
+        Grant-CPermission -Path $certPath `
                          -Identity $Identity `
                          -Permission 'GenericAll'
 
@@ -161,7 +163,7 @@ function TestPermissionOnPrivateKey
     }
     finally
     {
-        Uninstall-Certificate -Thumbprint $cert.Thumbprint `
+        Uninstall-CCertificate -Thumbprint $cert.Thumbprint `
                               -StoreLocation LocalMachine `
                               -StoreName My
     }

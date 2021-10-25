@@ -4,9 +4,12 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
 
+$carbonPath = Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon'
+Import-Module -Name $carbonPath -Verbose -Scope Local -Function 'New-CCredential', 'Uninstall-CUser', 'Install-CUser', 'Install-CService', 'Grant-CPrivilege','Revoke-CPrivilege', 'Test-CPrivilege', 'Get-CPrivilege'
+
 $failed = $false
 $servicePath = Join-Path -Path $PSScriptRoot -ChildPath '\Functions\Service\NoOpService.exe' -Resolve
-$testCredentials = New-Credential -Username 'CarbonGrantPrivilege' -Password 'a1b2c3d4e5#!'
+$testCredentials = New-CCredential -Username 'CarbonGrantPrivilege' -Password 'a1b2c3d4e5#!'
 
 function Init
 {
@@ -16,7 +19,7 @@ function Init
 
 function Reset
 {
-    Uninstall-User -Username 'CarbonGrantPrivilege'
+    Uninstall-CUser -Username 'CarbonGrantPrivilege'
 }
 
 function GivenUser
@@ -27,7 +30,7 @@ function GivenUser
 
         [String]$Description
     )
-    Install-User -Credential $User -Description $Description
+    Install-CUser -Credential $User -Description $Description
 }
 
 function GivenService
@@ -47,7 +50,7 @@ function GivenService
     )
     try 
     {
-        Install-Service -Name $Service `
+        Install-CService -Name $Service `
                         -Path $Path `
                         -StartupType $StartupType `
                         -Credential $User
@@ -88,7 +91,7 @@ function WhenGrantingPrivilege
     )
     try
     {
-        Grant-Privilege -Identity $To `
+        Grant-CPrivilege -Identity $To `
                         -Privilege $Privilege
     }
     catch
@@ -108,7 +111,7 @@ function WhenRevokingPrivilege
     )
     try
     {
-        Revoke-Privilege -Identity $To -Privilege $Privilege
+        Revoke-CPrivilege -Identity $To -Privilege $Privilege
     }
     catch
     {
@@ -126,8 +129,8 @@ function ThenPrivilegeGranted
         [String]$To
     )
 
-    Test-Privilege -Identity $To -Privilege $Privilege | Should -BeTrue
-    Get-Privilege -Identity $To | Where-Object { $_ -eq $Privilege } | Should -Not -BeNullOrEmpty
+    Test-CPrivilege -Identity $To -Privilege $Privilege | Should -BeTrue
+    Get-CPrivilege -Identity $To | Where-Object { $_ -eq $Privilege } | Should -Not -BeNullOrEmpty
 }
 
 
@@ -141,8 +144,8 @@ function ThenPrivilegeRevoked
         [String]$To
     )
 
-    Test-Privilege -Identity $To -Privilege $Privilege | Should -BeFalse
-    Get-Privilege -Identity $To | Where-Object { $_ -eq $Privilege } | Should -BeNullOrEmpty
+    Test-CPrivilege -Identity $To -Privilege $Privilege | Should -BeFalse
+    Get-CPrivilege -Identity $To | Where-Object { $_ -eq $Privilege } | Should -BeNullOrEmpty
 }
 
 Describe 'GrantPrivileges.when privilege of service is granted to user.' {

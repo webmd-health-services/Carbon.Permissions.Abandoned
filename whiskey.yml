@@ -45,7 +45,7 @@ Build:
 - GetPowerShellModule:
     Name: Carbon.Core
     Version: 1.0.0
-    Path: Carbon.Cryptography\Modules
+    Path: Carbon.Permissions\Modules
 
 - Pester4:
     Script: Tests\*.Tests.ps1
