@@ -15,10 +15,16 @@
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
+. (Join-Path -Path $PSScriptRoot -ChildPath '\Types\CarbonPermissionsContainerInheritanceFlags.ps1' -Resolve)
+
 # Functions should use $moduleRoot as the relative root from which to find
 # things. A published module has its function appended to this file, while a 
 # module in development has its functions in the Functions directory.
 $moduleRoot = $PSScriptRoot
+
+$privateModulesRoot = Join-Path -Path $moduleRoot -ChildPath 'Modules'
+
+Import-Module -Name (Join-Path -Path $privateModulesRoot -ChildPath 'Carbon.Core')
 
 # Store each of your module's functions in its own file in the Functions 
 # directory. On the build server, your module's functions will be appended to 

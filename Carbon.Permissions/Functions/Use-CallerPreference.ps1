@@ -50,17 +50,17 @@ function Use-CallerPreference
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         #[Management.Automation.PSScriptCmdlet]
         # The module function's `$PSCmdlet` object. Requires the function be decorated with the `[CmdletBinding()]`
         # attribute.
+        [Parameter(Mandatory)]
         $Cmdlet,
 
-        [Parameter(Mandatory)]
         # The module function's `$ExecutionContext.SessionState` object.  Requires the function be decorated with the
         # `[CmdletBinding()]` attribute. 
         #
         # Used to set variables in its callers' scope, even if that caller is in a different script module.
+        [Parameter(Mandatory)]
         [Management.Automation.SessionState]$SessionState
     )
 
