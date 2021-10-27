@@ -190,7 +190,7 @@ Describe 'GrantPrivileges.when identity is not found.' {
         Init
         GivenUser -User $testCredentials -Description "Account to test Privileges."
         GivenService -Service 'CarbonGrantPrivilegeTest' -Path $Path -StartupType Manual -User $testCredentials
-        { Grant-Privilege -Identity 'IDONOTEXIST' -Privilege 'SeBatchLogonRight' -ErrorAction Stop } |
+        { Grant-CPrivilege -Identity 'IDONOTEXIST' -Privilege 'SeBatchLogonRight' -ErrorAction Stop } |
             Should -Throw "Identity 'IDONOTEXIST' not found"
     }
 }
@@ -200,7 +200,7 @@ Describe 'GrantPrivileges.when name of privilege is given as UPPERCASE.' {
         Init
         GivenUser -User $testCredentials -Description "Account to test Privileges."
         GivenService -Service 'CarbonGrantPrivilegeTest' -Path $Path -StartupType Manual -User $testCredentials
-        { Grant-Privilege -Identity 'CarbonGrantPrivilege' -Privilege 'SESERVICELOGONRIGHT' -ErrorAction Stop } |
+        { Grant-CPrivilege -Identity 'CarbonGrantPrivilege' -Privilege 'SESERVICELOGONRIGHT' -ErrorAction Stop } |
             Should -Throw "Failed to grant 04-PF2TDC14\CarbonGrantPrivilege SESERVICELOGONRIGHT privilege(s): No such privilege. Indicates a specified privilege does not exist.  *Privilege names are **case-sensitive**.*"
     }
 }

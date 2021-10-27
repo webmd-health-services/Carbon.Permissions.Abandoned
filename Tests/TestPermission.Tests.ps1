@@ -4,10 +4,8 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
 
-#Import-Module -Name 'Carbon' 
-
 $carbonPath = Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon'
-Import-Module -Name $carbonPath -Verbose -Scope Local -Function 'New-CCredential', 'Install-CRegistryKey', 'Install-CUser', 'Grant-CPermission', 'Test-CPermission'
+Import-Module -Name $carbonPath -Verbose -Scope Local -Function 'New-CCredential', 'Install-CRegistryKey', 'Install-CUser', 'Install-CCertificate', 'Uninstall-CCertificate', 'Grant-CPermission', 'Test-CPermission'
 
 $CarbonTestUser = New-CCredential 'CarbonTestUser' -Password 'Tt6QM1lmDrFSf'
 $script:failed = $false
@@ -192,10 +190,6 @@ function TestPermissiononPublicKey
                    -givenIdentity $Identity `
                    -givenPermission 'FullControl'
 
-    TestPermission -givenPath $certPath `
-                   -givenIdentity $Identity `
-                   -givenPermission 'FullControl' `
-                   -Exact
 }
 
 function ThenTestsPassed
@@ -215,7 +209,6 @@ Describe 'TestPermission.when given an existing path and a valid identity with c
         Init
         GivenUser -User $CarbonTestUser -Description 'User to test TestPermission.'
         WhenGrantingPermission -Permission 'FullControl' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
-        WhenGrantingPermission -Permission 'FullControl' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
         TestPermission -givenPath $dirPath -givenIdentity $identity -givenPermission 'FullControl'
         ThenTestsPassed
     }
@@ -225,8 +218,9 @@ Describe 'TestPermission.when given an existing path and a valid identity with i
     AfterEach { Reset }
     It 'should not return true.' {
         Init
-        CreateTempDirectoryTree
-        TestPermission -givenPath $dirPath -givenIdentity $identity -givenPermission 'Write'
+        WhenGrantingPermission -Permission 'ReadAndExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
+        WhenGrantingPermission -Permission 'Write' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
+        TestPermission -givenPath $dirPath -givenIdentity $identity -givenPermission 'Read'
         ThenTestsFailed
     }
 }
@@ -235,8 +229,8 @@ Describe 'TestPermission.when given non-existing path and a valid identity and p
     AfterEach { Reset }
     It 'should throw path not found error.' {
         Init
-        CreateTempDirectoryTree
-        { Test-Permission -Path 'C:I\Do\Not\Exist' -Identity $identity -Permission 'FullControl' -ErrorAction Stop } |
+        WhenGrantingPermission -Permission 'ReadandExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
+        { Test-CPermission -Path 'C:I\Do\Not\Exist' -Identity $identity -Permission 'FullControl' -ErrorAction Stop } |
             Should -Throw "Unable to test CarbonTestUser's FullControl permissions: path 'C:I\Do\Not\Exist' not found."
     }
 }
@@ -244,7 +238,7 @@ Describe 'TestPermission.when given an existing path and a valid identity with c
     AfterEach { Reset }
     It 'should not return true. ' {
         Init
-        CreateTempDirectoryTree
+        WhenGrantingPermission -Permission 'ReadandExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
         TestPermission -givenPath $dirPath -givenIdentity $identity -givenPermission 'ReadAndExecute' -Exact
         ThenTestsPassed
     }
@@ -253,7 +247,7 @@ Describe 'TestPermission.when given an existing path and a valid identity with i
     AfterEach { Reset }
     It 'should not return true. ' {
         Init
-        CreateTempDirectoryTree
+        WhenGrantingPermission -Permission 'ReadandExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
         TestPermission -givenPath $dirPath -givenIdentity $identity -givenPermission 'Read' -Exact
         ThenTestsFailed
     }
@@ -263,7 +257,7 @@ Describe 'TestPermission.when given inherited permission without inheritance fla
     AfterEach { Reset }
     It 'should return true. ' {
         Init
-        CreateTempDirectoryTree
+        WhenGrantingPermission -Permission 'ReadandExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
         TestPermission -givenPath $filePath -givenIdentity $identity -givenPermission 'ReadAndExecute' -Inherited -Exact
         ThenTestsPassed
     }
@@ -273,7 +267,7 @@ Describe 'TestPermission.when given inherited permission without inheritance fla
     AfterEach { Reset }
     It 'should exclude inherited permission and fail.' {
         Init 
-        CreateTempDirectoryTree
+        WhenGrantingPermission -Permission 'ReadandExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
         TestPermission -givenPath $filePath -givenIdentity $identity -givenPermission 'ReadAndExecute' -Exact
         ThenTestsFailed
     }
@@ -282,8 +276,8 @@ Describe 'TestPermission.when given inheritance and propagation flags on file. '
     AfterEach { Reset }
     It 'should ignore flags and issue warning. '{
         Init
-        CreateTempDirectoryTree
-        { Test-Permission -givenPath $filePath -givenIdentity $identity -givenPermission 'ReadAndExecute' -Exact -ApplyTo SubContainers -WarningVariable 'warning' -WarningAction SilentlyContinue}
+        WhenGrantingPermission -Permission 'ReadandExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
+        { Test-CPermission -givenPath $filePath -givenIdentity $identity -givenPermission 'ReadAndExecute' -Exact -ApplyTo SubContainers -WarningVariable 'warning' -WarningAction SilentlyContinue}
         ThenTestsPassed
     }
 }
@@ -291,7 +285,7 @@ Describe 'TestPermission.when given ungranted permission on registry. ' {
     AfterEach { Reset }
     It 'should return false. ' {
         Init
-        CreateTempDirectoryTree
+        WhenGrantingPermission -Permission 'ReadandExecute' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
         TestPermission -givenPath $keyPath -givenIdentity $identity -givenPermission 'Delete'
         ThenTestsFailed
     }
@@ -300,8 +294,8 @@ Describe 'TestPermission.when checking correct granted permission on registry. '
     AfterEach { Reset }
     It 'should return true. ' {
         Init
-        CreateTempDirectoryTree
-        TestPermission -givenPath $keyPath -givenIdentity $identity -givenPermission 'ReadKey'
+        WhenGrantingPermission -Permission 'Delete' -To $identity -On $dirPath -ApplyTo 'ChildLeaves'
+        TestPermission -givenPath $dirPath -givenIdentity $identity -givenPermission 'Delete'
         ThenTestsPassed
     }
 }
@@ -310,8 +304,9 @@ Describe 'TestPermission.when checking exact correct permissions on registry. ' 
     AfterEach { Reset }
     It 'should return true. ' {
         Init
-        CreateTempDirectoryTree
-        { Test-Permission -Path $keyPath -Identity $identity -Permission 'ReadKey','WriteKey' -Exact } |
+        WhenGrantingPermission -Permission 'ReadKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
+        WhenGrantingPermission -Permission 'WriteKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
+        { Test-CPermission -Path $keyPath -Identity $identity -Permission 'ReadKey','WriteKey' -Exact } |
             Should -BeTrue
     }
 }
@@ -320,9 +315,10 @@ Describe 'TestPermission.when checking granted inheritance flags. ' {
     AfterEach { Reset }
     It 'should return true. ' {
         Init
-        CreateTempDirectoryTree
-        { Test-Permission -Path $dirPath -Identity $identity -Permission 'ReadAndExecute' -ApplyTo ContainerandLeaves }| Should -BeTrue
-        { Test-Permission -Path $dirPath -Identity $identity -Permission 'ReadAndExecute' -ApplyTo ChildLeaves } | 
+        WhenGrantingPermission -Permission 'ReadKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
+        WhenGrantingPermission -Permission 'ExecuteKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
+        { Test-CPermission -Path $dirPath -Identity $identity -Permission 'ReadAndExecute' -ApplyTo ContainerandLeaves }| Should -BeTrue
+        { Test-CPermission -Path $dirPath -Identity $identity -Permission 'ReadAndExecute' -ApplyTo ChildLeaves } | 
             Should -BeTrue
     }
 }
@@ -331,8 +327,9 @@ Describe 'TestPermission.when checking granted exact inheritance flags. ' {
     AfterEach { Reset }
     It 'should return true. ' {
         Init 
-        CreateTempDirectoryTree
-        { Test-Permission -path $dirPath -Identity $identity -Permission 'ReadAndExecute' -ApplyTo ChildLeaves -Exact -ErrorAction Stop} |
+        WhenGrantingPermission -Permission 'ReadKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
+        WhenGrantingPermission -Permission 'ExecuteKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
+        { Test-CPermission -path $dirPath -Identity $identity -Permission 'ReadAndExecute' -ApplyTo ChildLeaves -Exact -ErrorAction Stop} |
             Should -BeTrue
     }
 }
@@ -341,7 +338,8 @@ Describe 'TestPermission.when checking permission on a private key with correct 
     AfterEach { Reset }
     It 'should return true. ' {
         Init
-        CreateTempDirectoryTree
+        WhenGrantingPermission -Permission 'ReadKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
+        WhenGrantingPermission -Permission 'ExecuteKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
         TestPermissionOnPrivateKey -Identity $identity
         ThenTestsPassed
     }
@@ -351,7 +349,8 @@ Describe 'TestPermission.when checking permission on a public key with correct p
     AfterEach { Reset }
     It 'should return true. ' {
         Init
-        CreateTempDirectoryTree
+        WhenGrantingPermission -Permission 'ReadKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
+        WhenGrantingPermission -Permission 'ExecuteKey' -To $identity -On $keyPath -ApplyTo 'ChildLeaves'
         TestPermissionOnPublicKey -Identity $identity
         ThenTestsPassed
     }
